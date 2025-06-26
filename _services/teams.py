@@ -62,8 +62,8 @@ def store_team_colors(year: int):
             "team_season_colors", metadata, autoload_with=postgres
         )
         pg_con.execute(
-            insert(table=team_season_colors_table).values(
-                joined.to_dict(orient="records")
-            )
+            insert(table=team_season_colors_table)
+            .values(joined.to_dict(orient="records"))
+            .on_conflict_do_nothing()
         )
         pg_con.commit()

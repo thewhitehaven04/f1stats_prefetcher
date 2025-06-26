@@ -1,28 +1,45 @@
 import pandas as pd
 import fastf1
+from pycountry import countries
 from sqlalchemy import MetaData, Table
 from sqlalchemy.dialects.postgresql import insert
 
 from _repository.engine import postgres
+from _services.circuits import get_season_data
 
 
 def store_events(year: int):
-    schedules = []
-    schedule = fastf1.get_event_schedule(year=year)[
-        ["EventName", "OfficialEventName", "EventDate", "Country", "EventFormat"]
+    schedule = fastf1.get_event_schedule(year=year, include_testing=False)[
+        [
+            "EventName",
+            "OfficialEventName",
+            "EventDate",
+            "Country",
+            "Location",
+            "EventFormat",
+        ]
     ].rename(
         columns={
             "EventName": "event_name",
             "OfficialEventName": "event_official_name",
             "EventDate": "date_start",
+            "Location": "location",
             "Country": "country",
             "EventFormat": "event_format_name",
         }
     )
+    schedule["country"] = schedule["country"].map(
+        lambda x: countries.search_fuzzy(x)[0].alpha_3
+    )
     schedule[["season_year"]] = year
-    schedules.append(schedule)
 
-    schedule = pd.concat(schedules)
+    season_data = pd.DataFrame(get_season_data(str(year)), columns=["id", "location"])
+    schedule = schedule.join(
+        season_data.set_index("location").rename(columns={"id": "circuit_id"}),
+        on="location",
+        how="right",
+        validate="m:1",
+    ).drop(labels="location", axis=1)
 
     with postgres.connect() as pg_con:
         events_table = Table("events", MetaData(), autoload_with=postgres)

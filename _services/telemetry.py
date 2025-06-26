@@ -160,7 +160,7 @@ def store_race_telemetry(season: int, round_number: int, identifier: int):
         telemetry_table = Table(
             "telemetry_measurements", MetaData(), autoload_with=postgres
         )
-        for batch in batched(telemetries, 10000):
+        for batch in batched(telemetries, 1000):
             pg_con.execute(insert(table=telemetry_table).values(batch))
         pg_con.commit()
 
@@ -244,7 +244,7 @@ def store_quali_telemetry(season: int, round_number: int, identifier: int):
         telemetry_table = Table(
             "telemetry_measurements", MetaData(), autoload_with=postgres
         )
-        for batch in batched(telemetries, 10000):
+        for batch in batched(telemetries, 1000):
             pg_con.execute(insert(table=telemetry_table).values(batch))
         pg_con.commit()
 

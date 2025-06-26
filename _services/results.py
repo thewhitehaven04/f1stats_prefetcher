@@ -1,7 +1,13 @@
 import pandas as pd
 import fastf1
-from sqlalchemy import MetaData, Table
+from sqlalchemy import MetaData, Table, select
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import Session
+from _repository.repository import (
+    PracticeSessionResults,
+    QualifyingSessionResults,
+    SessionResults,
+)
 
 from _repository.engine import postgres
 from _services.session_type_selector import get_session_type
@@ -159,24 +165,14 @@ def store_sprint_quali_results(season: int, round_number: int):
             }
         )
 
-    with postgres.connect() as pg_con:
-        metadata = MetaData()
-        session_results_table = Table(
-            "session_results", metadata, autoload_with=postgres
-        )
-        quali_results_table = Table(
-            "qualifying_session_results", metadata, autoload_with=postgres
-        )
+    with Session(postgres) as s:
         for result, quali_result in zip(results_arr, sprint_quali_results):
-            result_id = pg_con.execute(
-                insert(table=session_results_table).values(result)
-            ).inserted_primary_key[0]
-            pg_con.execute(
-                insert(table=quali_results_table).values(
-                    {"id": result_id, **quali_result}
-                )
-            )
-        pg_con.commit()
+            orm_result = SessionResults(**result)
+            s.add(orm_result)
+            s.flush()
+            orm_result.id
+            s.add(QualifyingSessionResults(**quali_result))
+        s.commit()
 
 
 def store_quali_results(season: int, round_number: int):
@@ -205,24 +201,14 @@ def store_quali_results(season: int, round_number: int):
             }
         )
 
-    with postgres.connect() as pg_con:
-        metadata = MetaData()
-        session_results_table = Table(
-            "session_results", metadata, autoload_with=postgres
-        )
-        quali_results_table = Table(
-            "qualifying_session_results", metadata, autoload_with=postgres
-        )
-        for result, quali_result in zip(results_arr, quali_results):
-            result_id = pg_con.execute(
-                insert(table=session_results_table).values(result)
-            ).inserted_primary_key[0]
-            pg_con.execute(
-                insert(table=quali_results_table).values(
-                    {"id": result_id, **quali_result}
-                )
-            )
-        pg_con.commit()
+    with Session(postgres) as s:
+        for result, practice_result in zip(results_arr, quali_results):
+            orm_result = SessionResults(**result)
+            s.add(orm_result)
+            s.flush()
+            orm_result.id
+            s.add(QualifyingSessionResults(**practice_result))
+        s.commit()
 
 
 def store_practice_results(season: int, round_number: int, identifier: int):
@@ -256,25 +242,14 @@ def store_practice_results(season: int, round_number: int, identifier: int):
             }
         )
 
-    with postgres.connect() as pg_con:
-        metadata = MetaData()
-        session_results_table = Table(
-            "session_results", metadata, autoload_with=postgres
-        )
-        practice_results_table = Table(
-            "practice_session_results", metadata, autoload_with=postgres
-        )
-
+    with Session(postgres) as s:
         for result, practice_result in zip(results_arr, practice_results):
-            result_id = pg_con.execute(
-                insert(table=session_results_table).values(result)
-            ).inserted_primary_key[0]
-            pg_con.execute(
-                insert(table=practice_results_table).values(
-                    {"id": result_id, **practice_result}
-                )
-            )
-        pg_con.commit()
+            orm_result = SessionResults(**result)
+            s.add(orm_result)
+            s.flush()
+            orm_result.id
+            s.add(PracticeSessionResults(**practice_result))
+        s.commit()
 
 
 def store_results(season: int, round_number: int, identifier: int):

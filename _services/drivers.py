@@ -8,24 +8,23 @@ from sqlalchemy.dialects.postgresql import insert
 from _repository.engine import postgres
 
 
-def store_driver_data(season: int):
+def store_driver_data(season: int, event: int):
     year_data: list[pd.DataFrame] = []
-    session = fastf1.get_session(
-        year=season, gp="Abu Dhabi Grand Prix", identifier="Practice 1"
-    )
-    session.load(laps=True, telemetry=False, weather=False, messages=False)
-    results = session.results
-    year_data.append(
-        results[
-            [
-                "BroadcastName",
-                "Abbreviation",
-                "FirstName",
-                "LastName",
-                "CountryCode",
+    for identifier in ["Practice 1", "Practice 2"]:
+        session = fastf1.get_session(year=season, gp=event, identifier=identifier)
+        session.load(laps=False, telemetry=False, weather=False, messages=False)
+        results = session.results
+        year_data.append(
+            results[
+                [
+                    "BroadcastName",
+                    "Abbreviation",
+                    "FirstName",
+                    "LastName",
+                    "CountryCode",
+                ]
             ]
-        ]
-    )
+        )
 
     all_drivers = (
         pd.concat(year_data)
@@ -42,7 +41,7 @@ def store_driver_data(season: int):
     )
     with postgres.connect() as pg_con:
         drivers_table = Table("drivers", MetaData(), autoload_with=postgres)
-        for driver in all_drivers:
+        for driver in all_drivers.to_dict(orient="records"):
             try:
                 pg_con.execute(
                     insert(table=drivers_table)
@@ -94,7 +93,8 @@ def store_team_changes(season: int):
                 )
                 if not previous_row:
                     pg_con.execute(
-                        insert(driver_team_changes_table).values(
+                        insert(driver_team_changes_table)
+                        .values(
                             {
                                 "driver_id": driver,
                                 "timestamp_start": date,
@@ -102,6 +102,7 @@ def store_team_changes(season: int):
                                 "team_id": team_id,
                             }
                         )
+                        .on_conflict_do_nothing()
                     )
                     pg_con.commit()
                     continue
@@ -118,7 +119,8 @@ def store_team_changes(season: int):
                     )
                 )
                 pg_con.execute(
-                    insert(driver_team_changes_table).values(
+                    insert(driver_team_changes_table)
+                    .values(
                         {
                             "driver_id": driver,
                             "timestamp_start": date,
@@ -126,35 +128,30 @@ def store_team_changes(season: int):
                             "team_id": team_id,
                         }
                     )
+                    .on_conflict_do_nothing()
                 )
                 pg_con.commit()
                 previous_date = date
 
 
-def store_driver_numbers(season: int):
-    schedule = fastf1.get_event_schedule(year=season, include_testing=False)
-
+def store_driver_numbers(season: int, event: int):
     with postgres.connect() as pg_con:
         driver_numbers_table = Table(
             "driver_numbers", MetaData(), autoload_with=postgres
         )
-        for round_number in schedule["RoundNumber"].values:
-            for identifier in range(1, 4):
-                session = fastf1.get_session(
-                    year=season, gp=round_number, identifier=identifier
+        session = fastf1.get_session(year=season, gp=event, identifier=1)
+        session.load(laps=False, weather=False, messages=False, telemetry=False)
+        results = session.results[["DriverNumber", "BroadcastName"]]
+        for result in results.itertuples():
+            pg_con.execute(
+                insert(driver_numbers_table)
+                .values(
+                    {
+                        "driver_id": result.BroadcastName,
+                        "season_year": season,
+                        "driver_number": result.DriverNumber,
+                    }
                 )
-                session.load(laps=True, weather=False, messages=False, telemetry=False)
-                results = session.results[["DriverNumber", "BroadcastName"]]
-                for result in results.itertuples():
-                    pg_con.execute(
-                        insert(driver_numbers_table)
-                        .values(
-                            {
-                                "driver_id": result.BroadcastName,
-                                "season_year": season,
-                                "driver_number": result.DriverNumber,
-                            }
-                        )
-                        .on_conflict_do_nothing()
-                    )
+                .on_conflict_do_nothing()
+            )
         pg_con.commit()

@@ -23,6 +23,8 @@ def store_practice_laps(season: int, round_number: int, identifier: int):
             "Compound",
             "LapNumber",
             "DriverNumber",
+            "PitInTime",
+            "PitOutTime",
         ]
     ].rename(
         columns={
@@ -35,6 +37,8 @@ def store_practice_laps(season: int, round_number: int, identifier: int):
             "Stint": "stint",
             "Compound": "compound_id",
             "LapNumber": "lap_number",
+            "PitInTime": "pit_in_time",
+            "PitOutTime": "pit_out_time",
         }
     )
     results = session.results[["DriverNumber", "BroadcastName"]]
