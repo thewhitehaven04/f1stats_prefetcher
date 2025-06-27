@@ -1,11 +1,10 @@
 import pandas as pd
 import fastf1
-from sqlalchemy import MetaData, Table, select
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 from _repository.repository import (
     PracticeSessionResults,
     QualifyingSessionResults,
+    RaceSessionResults,
     SessionResults,
 )
 
@@ -56,24 +55,13 @@ def store_sprint_race_results(season: int, round_number: int):
             }
         )
 
-    with postgres.connect() as pg_con:
-        metadata = MetaData()
-        session_results_table = Table(
-            "session_results", metadata, autoload_with=postgres
-        )
-        race_results_table = Table(
-            "race_session_results", metadata, autoload_with=postgres
-        )
+    with Session(postgres) as s:
         for result, sprint_result in zip(results_arr, sprint_results):
-            result_id = pg_con.execute(
-                insert(table=session_results_table).values(result)
-            ).inserted_primary_key[0]
-            pg_con.execute(
-                insert(table=race_results_table).values(
-                    {"id": result_id, **sprint_result}
-                )
-            )
-        pg_con.commit()
+            orm_result = SessionResults(**result)
+            s.add(orm_result)
+            s.flush()
+            s.add(RaceSessionResults(**sprint_result, id=orm_result.id))
+        s.commit()
 
 
 def store_race_results(season: int, round_number: int):
@@ -120,24 +108,13 @@ def store_race_results(season: int, round_number: int):
             }
         )
 
-    with postgres.connect() as pg_con:
-        metadata = MetaData()
-        session_results_table = Table(
-            "session_results", metadata, autoload_with=postgres
-        )
-        race_results_table = Table(
-            "race_session_results", metadata, autoload_with=postgres
-        )
+    with Session(postgres) as s:
         for result, race_result in zip(results_arr, race_results):
-            result_id = pg_con.execute(
-                insert(table=session_results_table).values(result)
-            ).inserted_primary_key[0]
-            pg_con.execute(
-                insert(table=race_results_table).values(
-                    {"id": result_id, **race_result}
-                )
-            )
-        pg_con.commit()
+            orm_result = SessionResults(**result)
+            s.add(orm_result)
+            s.flush()
+            s.add(RaceSessionResults(**race_result, id=orm_result.id))
+        s.commit()
 
 
 def store_sprint_quali_results(season: int, round_number: int):
@@ -170,8 +147,7 @@ def store_sprint_quali_results(season: int, round_number: int):
             orm_result = SessionResults(**result)
             s.add(orm_result)
             s.flush()
-            orm_result.id
-            s.add(QualifyingSessionResults(**quali_result))
+            s.add(QualifyingSessionResults(**quali_result, id=orm_result.id))
         s.commit()
 
 
@@ -202,12 +178,11 @@ def store_quali_results(season: int, round_number: int):
         )
 
     with Session(postgres) as s:
-        for result, practice_result in zip(results_arr, quali_results):
+        for result, quali_result in zip(results_arr, quali_results):
             orm_result = SessionResults(**result)
             s.add(orm_result)
             s.flush()
-            orm_result.id
-            s.add(QualifyingSessionResults(**practice_result))
+            s.add(QualifyingSessionResults(**quali_result, id=orm_result.id))
         s.commit()
 
 
@@ -247,8 +222,7 @@ def store_practice_results(season: int, round_number: int, identifier: int):
             orm_result = SessionResults(**result)
             s.add(orm_result)
             s.flush()
-            orm_result.id
-            s.add(PracticeSessionResults(**practice_result))
+            s.add(PracticeSessionResults(**practice_result, id=orm_result.id))
         s.commit()
 
 

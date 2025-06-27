@@ -2,11 +2,11 @@ from asyncio.log import logger
 from itertools import batched
 import fastf1
 from sqlalchemy import MetaData, Table, select
-from sqlalchemy.dialects.postgresql import insert
 import pandas as pd
 
 from _repository.engine import postgres
 from _services.session_type_selector import get_session_type
+from sqlalchemy.orm import Session
 
 
 def store_practice_telemetry(season: int, identifier: int, round_number: int):
@@ -78,12 +78,10 @@ def store_practice_telemetry(season: int, identifier: int, round_number: int):
                     )
                     continue
 
-        telemetry_table = Table(
-            "telemetry_measurements", MetaData(), autoload_with=postgres
-        )
-        for batch in batched(telemetries, 10000):
-            pg_con.execute(insert(table=telemetry_table).values(batch))
-        pg_con.commit()
+        with Session(postgres) as s:
+            for batch in batched(telemetries, 1000):
+                s.add_all(batch)
+                s.commit()
 
 
 def store_race_telemetry(season: int, round_number: int, identifier: int):
@@ -157,12 +155,10 @@ def store_race_telemetry(season: int, round_number: int, identifier: int):
                     )
                     continue
 
-        telemetry_table = Table(
-            "telemetry_measurements", MetaData(), autoload_with=postgres
-        )
-        for batch in batched(telemetries, 1000):
-            pg_con.execute(insert(table=telemetry_table).values(batch))
-        pg_con.commit()
+        with Session(postgres) as s:
+            for batch in batched(telemetries, 1000):
+                s.add_all(batch)
+                s.commit()
 
 
 def store_quali_telemetry(season: int, round_number: int, identifier: int):
@@ -241,12 +237,10 @@ def store_quali_telemetry(season: int, round_number: int, identifier: int):
                     )
                     continue
 
-        telemetry_table = Table(
-            "telemetry_measurements", MetaData(), autoload_with=postgres
-        )
-        for batch in batched(telemetries, 1000):
-            pg_con.execute(insert(table=telemetry_table).values(batch))
-        pg_con.commit()
+        with Session(postgres) as s:
+            for batch in batched(telemetries, 1000):
+                s.add_all(batch)
+                s.commit()
 
 
 def store_telemetry(season: int, round_number: int, identifier: int):

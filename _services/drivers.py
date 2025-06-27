@@ -4,8 +4,10 @@ import pandas as pd
 import fastf1
 from sqlalchemy import MetaData, Table, select, update
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import Session
 
 from _repository.engine import postgres
+from _repository.repository import DriverNumbers, Drivers
 
 
 def store_driver_data(season: int, event: int):
@@ -39,16 +41,11 @@ def store_driver_data(season: int, event: int):
             }
         )
     )
-    with postgres.connect() as pg_con:
-        drivers_table = Table("drivers", MetaData(), autoload_with=postgres)
+    with Session(postgres) as s:
         for driver in all_drivers.to_dict(orient="records"):
             try:
-                pg_con.execute(
-                    insert(table=drivers_table)
-                    .values(driver)
-                    .on_conflict_do_nothing(constraint="drivers_pkey")
-                )
-                pg_con.commit()
+                s.add(Drivers(**driver))
+                s.commit()
             except:
                 logger.error(f"Unable to insert {driver}")
 
@@ -135,23 +132,21 @@ def store_team_changes(season: int):
 
 
 def store_driver_numbers(season: int, event: int):
-    with postgres.connect() as pg_con:
-        driver_numbers_table = Table(
-            "driver_numbers", MetaData(), autoload_with=postgres
-        )
+    with Session(postgres) as s:
         session = fastf1.get_session(year=season, gp=event, identifier=1)
         session.load(laps=False, weather=False, messages=False, telemetry=False)
         results = session.results[["DriverNumber", "BroadcastName"]]
         for result in results.itertuples():
-            pg_con.execute(
-                insert(driver_numbers_table)
-                .values(
-                    {
-                        "driver_id": result.BroadcastName,
-                        "season_year": season,
-                        "driver_number": result.DriverNumber,
-                    }
+            try:
+                s.add(
+                    DriverNumbers(
+                        **{
+                            "driver_id": result.BroadcastName,
+                            "season_year": season,
+                            "driver_number": result.DriverNumber,
+                        }
+                    )
                 )
-                .on_conflict_do_nothing()
-            )
-        pg_con.commit()
+                s.commit()
+            except:
+                logger.error(f"Unable to insert driver number {result}")

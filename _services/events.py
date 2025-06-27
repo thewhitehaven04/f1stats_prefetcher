@@ -1,10 +1,10 @@
 import pandas as pd
 import fastf1
 from pycountry import countries
-from sqlalchemy import MetaData, Table
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import Session
 
 from _repository.engine import postgres
+from _repository.repository import EventSessions, Events
 from _services.circuits import get_season_data
 
 
@@ -39,14 +39,11 @@ def store_events(year: int):
         on="location",
         how="right",
         validate="m:1",
-    ).drop(labels="location", axis=1)
+    ).drop(labels=["location"], axis=1)
 
-    with postgres.connect() as pg_con:
-        events_table = Table("events", MetaData(), autoload_with=postgres)
-        pg_con.execute(
-            insert(table=events_table).values(schedule.to_dict(orient="records"))
-        )
-        pg_con.commit()
+    with Session(postgres) as s:
+        s.add_all(map(lambda x: Events(**x), schedule.to_dict(orient="records")))
+        s.commit()
 
 
 def store_event_sessions(year: int):
@@ -71,9 +68,6 @@ def store_event_sessions(year: int):
             finally:
                 continue
 
-    with postgres.connect() as pg_con:
-        events_sessions_table = Table(
-            "event_sessions", MetaData(), autoload_with=postgres
-        )
-        pg_con.execute(insert(table=events_sessions_table).values(sessions))
-        pg_con.commit()
+    with Session(postgres) as s:
+        s.add_all(map(lambda x: EventSessions(**x), sessions))
+        s.commit()

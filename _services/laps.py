@@ -2,8 +2,10 @@ from sqlalchemy import MetaData, Table
 from sqlalchemy.dialects.postgresql import insert
 import fastf1
 import pandas as pd
-from _repository.engine import postgres 
+from _repository.engine import postgres
+from _repository.repository import Laps
 from _services.session_type_selector import get_session_type
+from sqlalchemy.orm import Session
 
 
 def store_practice_laps(season: int, round_number: int, identifier: int):
@@ -109,11 +111,10 @@ def store_practice_laps(season: int, round_number: int, identifier: int):
         )
         return val
 
-    laps_transformed = list(map(transform, practice_laps))
-    with postgres.connect() as pg_con:
-        laps_table = Table("laps", MetaData(), autoload_with=postgres)
-        pg_con.execute(insert(table=laps_table).values(laps_transformed))
-        pg_con.commit()
+    with Session(postgres) as s:
+        laps = map(lambda x: Laps(**x), map(transform, practice_laps))
+        s.add_all(laps)
+        s.commit()
 
 
 def store_quali_laps(season: int, round_number: int, identifier: int):
@@ -219,11 +220,10 @@ def store_quali_laps(season: int, round_number: int, identifier: int):
         )
         return val
 
-    laps_transformed = list(map(transform, quali_laps))
-    with postgres.connect() as pg_con:
-        laps_table = Table("laps", MetaData(), autoload_with=postgres)
-        pg_con.execute(insert(table=laps_table).values(laps_transformed))
-        pg_con.commit()
+    with Session(postgres) as s:
+        laps = map(lambda x: Laps(**x), map(transform, quali_laps))
+        s.add_all(laps)
+        s.commit()
 
 
 def store_race_laps(season: int, round_number: int, identifier: int):
@@ -329,11 +329,10 @@ def store_race_laps(season: int, round_number: int, identifier: int):
         )
         return val
 
-    laps_transformed = list(map(transform, quali_laps))
-    with postgres.connect() as pg_con:
-        laps_table = Table("laps", MetaData(), autoload_with=postgres)
-        pg_con.execute(insert(table=laps_table).values(laps_transformed))
-        pg_con.commit()
+    with Session(postgres) as s:
+        laps = map(lambda x: Laps(**x), map(transform, quali_laps))
+        s.add_all(laps)
+        s.commit()
 
 
 def store_laps(season: int, round_number: int, identifier: int):

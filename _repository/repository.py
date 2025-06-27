@@ -20,7 +20,13 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, MappedAsDataclass
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    mapped_column,
+    relationship,
+    MappedAsDataclass,
+)
 import datetime
 
 
@@ -52,7 +58,9 @@ class Circuits(Base):
     name: Mapped[str] = mapped_column(Text)
     geojson: Mapped[dict] = mapped_column(JSONB)
 
-    events: Mapped[List["Events"]] = relationship("Events", back_populates="circuit")
+    events: Mapped[List["Events"]] = relationship(
+        "Events", back_populates="circuit", init=False
+    )
 
 
 class Compounds(Base):
@@ -61,7 +69,9 @@ class Compounds(Base):
 
     id: Mapped[str] = mapped_column(String(16), primary_key=True)
 
-    laps: Mapped[List["Laps"]] = relationship("Laps", back_populates="compound")
+    laps: Mapped[List["Laps"]] = relationship(
+        "Laps", back_populates="compound", init=False
+    )
 
 
 t_driver_laps_with_analytics = Table(
@@ -92,14 +102,14 @@ class Drivers(Base):
     last_name: Mapped[str] = mapped_column(Text)
 
     driver_numbers: Mapped[List["DriverNumbers"]] = relationship(
-        "DriverNumbers", back_populates="driver"
+        "DriverNumbers", back_populates="driver", init=False
     )
     driver_team_changes: Mapped[List["DriverTeamChanges"]] = relationship(
-        "DriverTeamChanges", back_populates="driver"
+        "DriverTeamChanges", back_populates="driver", init=False
     )
     laps: Mapped[List["Laps"]] = relationship("Laps", back_populates="driver")
     session_results: Mapped[List["SessionResults"]] = relationship(
-        "SessionResults", back_populates="driver"
+        "SessionResults", back_populates="driver", init=False
     )
 
 
@@ -112,7 +122,7 @@ class EventFormats(Base):
     event_format_name: Mapped[str] = mapped_column(String(32), primary_key=True)
 
     events: Mapped[List["Events"]] = relationship(
-        "Events", back_populates="event_formats"
+        "Events", back_populates="event_formats", init=False
     )
 
 
@@ -140,11 +150,13 @@ class Seasons(Base):
     description_text: Mapped[Optional[str]] = mapped_column(Text)
 
     driver_numbers: Mapped[List["DriverNumbers"]] = relationship(
-        "DriverNumbers", back_populates="seasons"
+        "DriverNumbers", back_populates="seasons", init=False
     )
-    events: Mapped[List["Events"]] = relationship("Events", back_populates="seasons")
+    events: Mapped[List["Events"]] = relationship(
+        "Events", back_populates="seasons", init=False
+    )
     team_season_colors: Mapped[List["TeamSeasonColors"]] = relationship(
-        "TeamSeasonColors", back_populates="seasons"
+        "TeamSeasonColors", back_populates="seasons", init=False
     )
 
 
@@ -155,9 +167,11 @@ class SessionTypes(Base):
     id: Mapped[str] = mapped_column(String(32), primary_key=True)
 
     event_sessions: Mapped[List["EventSessions"]] = relationship(
-        "EventSessions", back_populates="session_type"
+        "EventSessions", back_populates="session_type", init=False
     )
-    laps: Mapped[List["Laps"]] = relationship("Laps", back_populates="session_type")
+    laps: Mapped[List["Laps"]] = relationship(
+        "Laps", back_populates="session_type", init=False
+    )
 
 
 class Teams(Base):
@@ -171,10 +185,10 @@ class Teams(Base):
     team_display_name: Mapped[Optional[str]] = mapped_column(String(64))
 
     driver_team_changes: Mapped[List["DriverTeamChanges"]] = relationship(
-        "DriverTeamChanges", back_populates="team"
+        "DriverTeamChanges", back_populates="team", init=False
     )
     team_season_colors: Mapped[List["TeamSeasonColors"]] = relationship(
-        "TeamSeasonColors", back_populates="team"
+        "TeamSeasonColors", back_populates="team", init=False
     )
 
 
@@ -197,9 +211,11 @@ class DriverNumbers(Base):
     season_year: Mapped[int] = mapped_column(SmallInteger, primary_key=True)
     driver_number: Mapped[int] = mapped_column(SmallInteger)
 
-    driver: Mapped["Drivers"] = relationship("Drivers", back_populates="driver_numbers")
+    driver: Mapped["Drivers"] = relationship(
+        "Drivers", back_populates="driver_numbers", init=False
+    )
     seasons: Mapped["Seasons"] = relationship(
-        "Seasons", back_populates="driver_numbers"
+        "Seasons", back_populates="driver_numbers", init=False
     )
 
 
@@ -227,9 +243,11 @@ class DriverTeamChanges(Base):
     )
 
     driver: Mapped["Drivers"] = relationship(
-        "Drivers", back_populates="driver_team_changes"
+        "Drivers", back_populates="driver_team_changes", init=False
     )
-    team: Mapped["Teams"] = relationship("Teams", back_populates="driver_team_changes")
+    team: Mapped["Teams"] = relationship(
+        "Teams", back_populates="driver_team_changes", init=False
+    )
 
 
 class Events(Base):
@@ -261,15 +279,21 @@ class Events(Base):
     event_format_name: Mapped[str] = mapped_column(String(32))
     circuit_id: Mapped[str] = mapped_column(String(8))
 
-    circuit: Mapped["Circuits"] = relationship("Circuits", back_populates="events")
+    circuit: Mapped["Circuits"] = relationship(
+        "Circuits", back_populates="events", init=False
+    )
     event_formats: Mapped["EventFormats"] = relationship(
-        "EventFormats", back_populates="events"
+        "EventFormats", back_populates="events", init=False
     )
-    seasons: Mapped["Seasons"] = relationship("Seasons", back_populates="events")
+    seasons: Mapped["Seasons"] = relationship(
+        "Seasons", back_populates="events", init=False
+    )
     event_sessions: Mapped[List["EventSessions"]] = relationship(
-        "EventSessions", back_populates="events"
+        "EventSessions", back_populates="events", init=False
     )
-    laps: Mapped[List["Laps"]] = relationship("Laps", back_populates="events")
+    laps: Mapped[List["Laps"]] = relationship(
+        "Laps", back_populates="events", init=False
+    )
 
 
 class TeamSeasonColors(Base):
@@ -292,9 +316,11 @@ class TeamSeasonColors(Base):
     color: Mapped[str] = mapped_column(CHAR(7))
 
     seasons: Mapped["Seasons"] = relationship(
-        "Seasons", back_populates="team_season_colors"
+        "Seasons", back_populates="team_season_colors", init=False
     )
-    team: Mapped["Teams"] = relationship("Teams", back_populates="team_season_colors")
+    team: Mapped["Teams"] = relationship(
+        "Teams", back_populates="team_season_colors", init=False
+    )
 
 
 class EventSessions(Base):
@@ -323,15 +349,19 @@ class EventSessions(Base):
     start_time: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=6))
     end_time: Mapped[datetime.datetime] = mapped_column(TIMESTAMP(precision=6))
 
-    events: Mapped["Events"] = relationship("Events", back_populates="event_sessions")
+    events: Mapped["Events"] = relationship(
+        "Events", back_populates="event_sessions", init=False
+    )
     session_type: Mapped["SessionTypes"] = relationship(
-        "SessionTypes", back_populates="event_sessions"
+        "SessionTypes", back_populates="event_sessions", init=False
     )
     session_results: Mapped[List["SessionResults"]] = relationship(
-        "SessionResults", back_populates="event_sessions"
+        "SessionResults", back_populates="event_sessions", init=False
     )
     session_weather_measurements: Mapped[List["SessionWeatherMeasurements"]] = (
-        relationship("SessionWeatherMeasurements", back_populates="event_sessions")
+        relationship(
+            "SessionWeatherMeasurements", back_populates="event_sessions", init=False
+        )
     )
 
 
@@ -398,14 +428,20 @@ class Laps(Base):
         Boolean, Computed("(pit_out_time IS NOT NULL)", persisted=True)
     )
 
-    compound: Mapped["Compounds"] = relationship("Compounds", back_populates="laps")
-    driver: Mapped["Drivers"] = relationship("Drivers", back_populates="laps")
-    events: Mapped[Optional["Events"]] = relationship("Events", back_populates="laps")
+    compound: Mapped["Compounds"] = relationship(
+        "Compounds", back_populates="laps", init=False
+    )
+    driver: Mapped["Drivers"] = relationship(
+        "Drivers", back_populates="laps", init=False
+    )
+    events: Mapped[Optional["Events"]] = relationship(
+        "Events", back_populates="laps", init=False
+    )
     session_type: Mapped["SessionTypes"] = relationship(
-        "SessionTypes", back_populates="laps"
+        "SessionTypes", back_populates="laps", init=False
     )
     telemetry_measurements: Mapped[List["TelemetryMeasurements"]] = relationship(
-        "TelemetryMeasurements", back_populates="lap"
+        "TelemetryMeasurements", back_populates="lap", init=False
     )
 
 
@@ -428,17 +464,17 @@ class SessionResults(Base):
         PrimaryKeyConstraint("id", name="session_results_pkey"),
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
     event_name: Mapped[Optional[str]] = mapped_column(Text)
     season_year: Mapped[Optional[int]] = mapped_column(SmallInteger)
     session_type_id: Mapped[Optional[str]] = mapped_column(String(32))
     driver_id: Mapped[Optional[str]] = mapped_column(String(64))
 
     driver: Mapped[Optional["Drivers"]] = relationship(
-        "Drivers", back_populates="session_results"
+        "Drivers", back_populates="session_results", init=False
     )
     event_sessions: Mapped[Optional["EventSessions"]] = relationship(
-        "EventSessions", back_populates="session_results"
+        "EventSessions", back_populates="session_results", init=False
     )
 
 
@@ -474,7 +510,7 @@ class SessionWeatherMeasurements(Base):
     air_temp: Mapped[int] = mapped_column(SmallInteger)
 
     event_sessions: Mapped["EventSessions"] = relationship(
-        "EventSessions", back_populates="session_weather_measurements"
+        "EventSessions", back_populates="session_weather_measurements", init=False
     )
 
 
@@ -498,7 +534,9 @@ class TelemetryMeasurements(Base):
     distance: Mapped[float] = mapped_column(REAL)
     gear: Mapped[int] = mapped_column(SmallInteger)
 
-    lap: Mapped["Laps"] = relationship("Laps", back_populates="telemetry_measurements")
+    lap: Mapped["Laps"] = relationship(
+        "Laps", back_populates="telemetry_measurements", init=False
+    )
 
 
 class PracticeSessionResults(SessionResults):

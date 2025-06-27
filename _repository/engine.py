@@ -8,7 +8,7 @@ db_conn_string = (
     environ.get("DB_URL_PYTHON")
     or "postgresql://germanbulavkin:postgres@localhost:5432/postgres"
 )
-logger.info(f"--------\nDatabase connection string: {db_conn_string}\n---------")
+logger.warning(f"--------\nDatabase connection string: {db_conn_string}\n---------")
 
 postgres = create_engine(db_conn_string)
 
