@@ -60,7 +60,16 @@ def store_sprint_race_results(season: int, round_number: int):
             orm_result = SessionResults(**result)
             s.add(orm_result)
             s.flush()
-            s.add(RaceSessionResults(**sprint_result, id=orm_result.id))
+            s.add(
+                RaceSessionResults(
+                    **result,
+                    **sprint_result,
+                    season_year=orm_result.season_year,
+                    event_name=orm_result.event_name,
+                    session_type_id=orm_result.session_type_id,
+                    driver_id=orm_result.driver_id,
+                )
+            )
         s.commit()
 
 
@@ -113,7 +122,16 @@ def store_race_results(season: int, round_number: int):
             orm_result = SessionResults(**result)
             s.add(orm_result)
             s.flush()
-            s.add(RaceSessionResults(**race_result, id=orm_result.id))
+            s.add(
+                RaceSessionResults(
+                    **race_result,
+                    id=orm_result.id,
+                    season_year=orm_result.season_year,
+                    event_name=orm_result.event_name,
+                    session_type_id=orm_result.session_type_id,
+                    driver_id=orm_result.driver_id,
+                )
+            )
         s.commit()
 
 
@@ -147,7 +165,16 @@ def store_sprint_quali_results(season: int, round_number: int):
             orm_result = SessionResults(**result)
             s.add(orm_result)
             s.flush()
-            s.add(QualifyingSessionResults(**quali_result, id=orm_result.id))
+            s.add(
+                QualifyingSessionResults(
+                    **quali_result,
+                    id=orm_result.id,
+                    season_year=orm_result.season_year,
+                    event_name=orm_result.event_name,
+                    session_type_id=orm_result.session_type_id,
+                    driver_id=orm_result.driver_id,
+                )
+            )
         s.commit()
 
 
@@ -182,7 +209,16 @@ def store_quali_results(season: int, round_number: int):
             orm_result = SessionResults(**result)
             s.add(orm_result)
             s.flush()
-            s.add(QualifyingSessionResults(**quali_result, id=orm_result.id))
+            s.add(
+                QualifyingSessionResults(
+                    **quali_result,
+                    id=orm_result.id,
+                    season_year=orm_result.season_year,
+                    event_name=orm_result.event_name,
+                    session_type_id=orm_result.session_type_id,
+                    driver_id=orm_result.driver_id,
+                )
+            )
         s.commit()
 
 
@@ -219,10 +255,12 @@ def store_practice_results(season: int, round_number: int, identifier: int):
 
     with Session(postgres) as s:
         for result, practice_result in zip(results_arr, practice_results):
-            orm_result = SessionResults(**result)
-            s.add(orm_result)
-            s.flush()
-            s.add(PracticeSessionResults(**practice_result, id=orm_result.id))
+            s.add(
+                PracticeSessionResults(
+                    **result,
+                    **practice_result,
+                )
+            )
         s.commit()
 
 
