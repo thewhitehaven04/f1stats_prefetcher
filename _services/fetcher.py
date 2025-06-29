@@ -12,9 +12,9 @@ from _services.telemetry import store_telemetry
 
 
 def store_session_data_to_db(season: str, round_number: int, session_type: int, is_store_session: bool = False):
-    # if is_store_session:
-    #     store_event_session(int(season), round_number, session_type)
-    # store_weather_data(int(season), round_number, session_type)
+    if is_store_session:
+        store_event_session(int(season), round_number, session_type)
+    store_weather_data(int(season), round_number, session_type)
     store_results(int(season), round_number, session_type)
     store_laps(int(season), round_number, session_type)
     store_telemetry(int(season), round_number, session_type)
