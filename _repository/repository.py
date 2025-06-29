@@ -401,7 +401,7 @@ class Laps(Base):
         ),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, init=False)
     lap_number: Mapped[int] = mapped_column(SmallInteger)
     stint: Mapped[int] = mapped_column(SmallInteger)
     event_name: Mapped[str] = mapped_column(Text)
@@ -418,14 +418,17 @@ class Laps(Base):
     laptime: Mapped[Optional[float]] = mapped_column(
         REAL,
         Computed("((sector_1_time + sector_2_time) + sector_3_time)", persisted=True),
+        init=False
     )
     pit_in_time: Mapped[Optional[float]] = mapped_column(REAL)
     pit_out_time: Mapped[Optional[float]] = mapped_column(REAL)
     is_inlap: Mapped[Optional[bool]] = mapped_column(
-        Boolean, Computed("(pit_in_time IS NOT NULL)", persisted=True)
+        Boolean, Computed("(pit_in_time IS NOT NULL)", persisted=True),
+        init=False
     )
     is_outlap: Mapped[Optional[bool]] = mapped_column(
-        Boolean, Computed("(pit_out_time IS NOT NULL)", persisted=True)
+        Boolean, Computed("(pit_out_time IS NOT NULL)", persisted=True),
+        init=False
     )
 
     compound: Mapped["Compounds"] = relationship(
@@ -551,7 +554,7 @@ class PracticeSessionResults(SessionResults):
         PrimaryKeyConstraint("id", name="practice_session_results_pkey"),
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
     laptime: Mapped[Optional[float]] = mapped_column(REAL)
     gap: Mapped[Optional[float]] = mapped_column(REAL)
 
@@ -568,7 +571,7 @@ class QualifyingSessionResults(SessionResults):
         PrimaryKeyConstraint("id", name="qualifying_session_results_pkey"),
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
     q1_laptime: Mapped[Optional[float]] = mapped_column(REAL)
     q2_laptime: Mapped[Optional[float]] = mapped_column(REAL)
     q3_laptime: Mapped[Optional[float]] = mapped_column(REAL)
@@ -587,7 +590,7 @@ class RaceSessionResults(SessionResults):
         PrimaryKeyConstraint("id", name="race_session_results_pkey"),
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
     total_time: Mapped[Optional[float]] = mapped_column(REAL)
     result_status: Mapped[Optional[str]] = mapped_column(Text)
     classified_position: Mapped[Optional[str]] = mapped_column(Text)

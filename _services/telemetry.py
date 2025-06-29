@@ -154,7 +154,7 @@ def store_race_telemetry(season: int, round_number: int, identifier: int):
 
         with Session(postgres) as s:
             for batch in batched(telemetries, 1000):
-                s.add_all(batch)
+                s.add_all(map(lambda x: TelemetryMeasurements(**x), batch))
                 s.commit()
 
 
@@ -231,7 +231,7 @@ def store_quali_telemetry(season: int, round_number: int, identifier: int):
 
         with Session(postgres) as s:
             for batch in batched(telemetries, 1000):
-                s.add_all(batch)
+                s.add_all(map(lambda x: TelemetryMeasurements(**x), batch))
                 s.commit()
 
 
@@ -243,5 +243,3 @@ def store_telemetry(season: int, round_number: int, identifier: int):
         store_quali_telemetry(season, round_number, identifier)
     elif session_type == "Racelike":
         store_race_telemetry(season, round_number, identifier)
-
-    raise ValueError("Session type not supported")

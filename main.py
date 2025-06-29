@@ -6,11 +6,12 @@ from _repository.engine import postgres
 
 app = Sanic("app")
 app.ctx.engine = postgres
+app.config.RESPONSE_TIMEOUT = 120
 
 
 @app.post("/season/<season>/event/<event:int>/session/<session:int>/populate")
 async def populate_session_data(request, season: str, event: int, session: int):
-    store_session_data_to_db(season, event, session)
+    store_session_data_to_db(season, event, session, True)
     return json({"success": True})
 
 

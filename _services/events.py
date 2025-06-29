@@ -4,7 +4,7 @@ from pycountry import countries
 from sqlalchemy.orm import Session
 
 from _repository.engine import postgres
-from _repository.repository import EventSessions, Events
+from _repository.repository import EventSessions, Events, SessionWeatherMeasurements
 from _services.circuits import get_season_data
 
 
@@ -46,28 +46,64 @@ def store_events(year: int):
         s.commit()
 
 
+def store_weather_data(year: int, event: int, identifier: int):
+    session = fastf1.get_session(year=year, gp=event, identifier=identifier)
+    session.load(laps=False, telemetry=False, weather=True, messages=False)
+    weather = session.weather_data
+    if weather is not None:
+        weather_data = weather[
+            ["AirTemp", "TrackTemp", "Pressure", "Humidity", "Time"]
+        ].rename(
+            columns={
+                "AirTemp": "air_temp",
+                "TrackTemp": "track_temp",
+                "Pressure": "air_pressure",
+                "Humidity": "humidity",
+                "Time": "time_at",
+            }
+        )
+        weather_data.time_at = weather_data.time_at.transform(
+            lambda x: x.total_seconds() * 1000
+        )
+        weather_data[["event_name"]] = session.event.EventName
+        weather_data[["season_year"]] = year
+        weather_data[["session_type_id"]] = session.name
+        weather_data = weather_data.to_dict(orient="records")
+        first_measurement = weather_data[0] 
+        last_measurement = weather_data[-1] 
+    else:
+        raise ValueError(f"Weather data not loaded for {year}, {event}, {identifier}")
+
+    with Session(postgres) as s:
+        s.add(SessionWeatherMeasurements(**first_measurement))
+        s.add(SessionWeatherMeasurements(**last_measurement))
+        s.commit()
+
+
+def store_event_session(year: int, event: int, identifier: int):
+    session = fastf1.get_session(year=year, gp=event, identifier=identifier)
+    session.load(laps=False, telemetry=False, weather=True, messages=False)
+    session_info = session.session_info
+
+    with Session(postgres) as s:
+        s.add(
+            EventSessions(
+                **{
+                    "start_time": session_info["StartDate"],
+                    "end_time": session_info["EndDate"],
+                    "season_year": year,
+                    "event_name": session.event.EventName,
+                    "session_type_id": session.event[f"Session{identifier}"],
+                }
+            )
+        )
+        s.commit()
+
+
 def store_event_sessions(year: int):
-    sessions = []
     schedule = fastf1.get_event_schedule(year=year, include_testing=False)
 
     for i in range(len(schedule.index)):
         for identifier in range(1, 6):
-            try:
-                session = fastf1.get_session(year=year, gp=i, identifier=identifier)
-                session.load(laps=False, telemetry=False, weather=False, messages=False)
-                session_info = session.session_info
-                sessions.append(
-                    {
-                        "start_time": session_info["StartDate"],
-                        "end_time": session_info["EndDate"],
-                        "season_year": year,
-                        "event_name": session.event.EventName,
-                        "session_type_id": session.event[f"Session{identifier}"],
-                    }
-                )
-            finally:
-                continue
-
-    with Session(postgres) as s:
-        s.add_all(map(lambda x: EventSessions(**x), sessions))
-        s.commit()
+            store_weather_data(year, schedule["RoundNumber"].iloc[i], identifier)
+            store_event_session(year, schedule["RoundNumber"].iloc[i], identifier)

@@ -5,7 +5,6 @@ from _repository.repository import (
     PracticeSessionResults,
     QualifyingSessionResults,
     RaceSessionResults,
-    SessionResults,
 )
 
 from _repository.engine import postgres
@@ -14,7 +13,6 @@ from _services.session_type_selector import get_session_type
 
 def store_sprint_race_results(season: int, round_number: int):
     results_arr = []
-    sprint_results = []
 
     session = fastf1.get_session(year=season, gp=round_number, identifier=3)
     session.load(laps=True, telemetry=False, weather=False, messages=False)
@@ -34,48 +32,31 @@ def store_sprint_race_results(season: int, round_number: int):
             ],
         )
     )
-    for result in results.iterrows():
+    for result in results.itertuples():
+        time = result.Time.total_seconds()
+        gap = result.Gap.total_seconds()
         results_arr.append(
             {
                 "event_name": session.event.EventName,
                 "season_year": season,
                 "session_type_id": f"Sprint",
-                "driver_id": result[1][1],
-            }
-        )
-        time = result[1][21].total_seconds()
-        gap = result[1][18].total_seconds()
-        sprint_results.append(
-            {
+                "driver_id": result.BroadcastName,
                 "total_time": time if pd.notna(time) else None,
-                "result_status": result[1][19],
-                "classified_position": result[1][13],
-                "points": result[1][20],
+                "result_status": result.Status,
+                "classified_position": result.Position,
+                "points": result.Points,
                 "gap": gap if pd.notna(gap) else None,
+                "grid_position": result.GridPosition,
             }
         )
 
     with Session(postgres) as s:
-        for result, sprint_result in zip(results_arr, sprint_results):
-            orm_result = SessionResults(**result)
-            s.add(orm_result)
-            s.flush()
-            s.add(
-                RaceSessionResults(
-                    **result,
-                    **sprint_result,
-                    season_year=orm_result.season_year,
-                    event_name=orm_result.event_name,
-                    session_type_id=orm_result.session_type_id,
-                    driver_id=orm_result.driver_id,
-                )
-            )
+        s.add_all(map(lambda x: RaceSessionResults(**x), results_arr))
         s.commit()
 
 
 def store_race_results(season: int, round_number: int):
     results_arr = []
-    race_results = []
 
     session = fastf1.get_session(year=season, gp=round_number, identifier=5)
     # uncomment if previously loaded
@@ -96,135 +77,88 @@ def store_race_results(season: int, round_number: int):
         )
     )
 
-    for result in results.iterrows():
+    for result in results.itertuples():
+        time = result.Time.total_seconds()
+        gap = result.Gap.total_seconds()
         results_arr.append(
             {
                 "event_name": session.event.EventName,
                 "season_year": season,
                 "session_type_id": "Race",
-                "driver_id": result[1][1],
-            }
-        )
-        time = result[1][21].total_seconds()
-        gap = result[1][18].total_seconds()
-        race_results.append(
-            {
+                "driver_id": result.BroadcastName,
                 "total_time": time if pd.notna(time) else None,
-                "result_status": result[1][19],
-                "classified_position": result[1][13],
-                "points": result[1][20],
+                "result_status": result.Status,
+                "classified_position": result.ClassifiedPosition,
+                "points": result.Points,
                 "gap": gap if pd.notna(gap) else None,
+                "grid_position": result.GridPosition,
             }
         )
 
     with Session(postgres) as s:
-        for result, race_result in zip(results_arr, race_results):
-            orm_result = SessionResults(**result)
-            s.add(orm_result)
-            s.flush()
-            s.add(
-                RaceSessionResults(
-                    **race_result,
-                    id=orm_result.id,
-                    season_year=orm_result.season_year,
-                    event_name=orm_result.event_name,
-                    session_type_id=orm_result.session_type_id,
-                    driver_id=orm_result.driver_id,
-                )
-            )
+        s.add_all(map(lambda x: RaceSessionResults(**x), results_arr))
         s.commit()
 
 
 def store_sprint_quali_results(season: int, round_number: int):
     results_arr = []
-    sprint_quali_results = []
     session = fastf1.get_session(year=season, gp=round_number, identifier=2)
     session.load(laps=True, telemetry=False, weather=False, messages=True)
     results = session.results
 
-    for result in results.iterrows():
+    for result in results.itertuples():
+        q1 = result.Q1.total_seconds() 
+        q2 = result.Q2.total_seconds()
+        q3 = result.Q3.total_seconds()
         results_arr.append(
             {
                 "event_name": session.event.EventName,
                 "season_year": season,
                 "session_type_id": f"Sprint Qualifying",
-                "driver_id": result[1][1],
-            }
-        )
-        sprint_quali_results.append(
-            {
-                "q1_laptime": result[1][15].total_seconds(),
-                "q2_laptime": result[1][16].total_seconds(),
-                "q3_laptime": result[1][17].total_seconds(),
-                "position": result[1][12],
+                "driver_id": result.BroadcastName,
+                "q1_laptime": q1 if pd.notna(q1) else None,
+                "q2_laptime": q2 if pd.notna(q2) else None,
+                "q3_laptime": q3 if pd.notna(q3) else None,
+                "position": result.Position,
             }
         )
 
     with Session(postgres) as s:
-        for result, quali_result in zip(results_arr, sprint_quali_results):
-            orm_result = SessionResults(**result)
-            s.add(orm_result)
-            s.flush()
-            s.add(
-                QualifyingSessionResults(
-                    **quali_result,
-                    id=orm_result.id,
-                    season_year=orm_result.season_year,
-                    event_name=orm_result.event_name,
-                    session_type_id=orm_result.session_type_id,
-                    driver_id=orm_result.driver_id,
-                )
-            )
+        s.add_all(map(lambda x: QualifyingSessionResults(**x), results_arr))
         s.commit()
 
 
 def store_quali_results(season: int, round_number: int):
     results_arr = []
-    quali_results = []
 
     session = fastf1.get_session(year=season, gp=round_number, identifier=4)
     # uncomment if previously loaded
     session.load(laps=True, telemetry=False, weather=False, messages=False)
     results = session.results
-    for result in results.iterrows():
+    for result in results.itertuples():
+        q1 = result.Q1.total_seconds() 
+        q2 = result.Q2.total_seconds()
+        q3 = result.Q3.total_seconds()
         results_arr.append(
             {
                 "event_name": session.event.EventName,
                 "season_year": season,
                 "session_type_id": f"Qualifying",
-                "driver_id": result[1][1],
-            }
-        )
-        quali_results.append(
-            {
-                "q1_laptime": result[1][15].total_seconds(),
-                "q2_laptime": result[1][16].total_seconds(),
-                "q3_laptime": result[1][17].total_seconds(),
-                "position": result[1][12],
+                "driver_id": result.BroadcastName,
+                "q1_laptime": q1 if pd.notna(q1) else None,
+                "q2_laptime": q2 if pd.notna(q2) else None,
+                "q3_laptime": q3 if pd.notna(q3) else None,
+                "position": result.Position,
             }
         )
 
     with Session(postgres) as s:
-        for result, quali_result in zip(results_arr, quali_results):
-            orm_result = SessionResults(**result)
-            s.add(orm_result)
-            s.flush()
-            s.add(
-                QualifyingSessionResults(
-                    **quali_result,
-                    id=orm_result.id,
-                    season_year=orm_result.season_year,
-                    event_name=orm_result.event_name,
-                    session_type_id=orm_result.session_type_id,
-                    driver_id=orm_result.driver_id,
-                )
-            )
+        s.add_all(map(lambda x: QualifyingSessionResults(**x), results_arr))
         s.commit()
 
 
 def store_practice_results(season: int, round_number: int, identifier: int):
     results_arr = []
-    practice_results = []
     session = fastf1.get_session(year=season, gp=round_number, identifier=identifier)
     # uncomment if previously loaded
     session.load(laps=True, telemetry=False, weather=False, messages=False)
@@ -237,30 +171,20 @@ def store_practice_results(season: int, round_number: int, identifier: int):
         .assign(Gap=lambda x: x["Time_"].sub(x["Time_"].iloc[0]))
         .dropna(subset=["BroadcastName"])
     )
-    for result in results.iterrows():
+    for result in results.itertuples():
         results_arr.append(
             {
                 "event_name": session.event.EventName,
                 "season_year": season,
                 "session_type_id": f"Practice {identifier}",
-                "driver_id": result[1][1],
-            }
-        )
-        practice_results.append(
-            {
-                "laptime": result[1][21].total_seconds(),
-                "gap": result[1][22].total_seconds(),
+                "driver_id": result.BroadcastName,
+                "laptime": result.Time_.total_seconds(),
+                "gap": result.Gap.total_seconds(),
             }
         )
 
     with Session(postgres) as s:
-        for result, practice_result in zip(results_arr, practice_results):
-            s.add(
-                PracticeSessionResults(
-                    **result,
-                    **practice_result,
-                )
-            )
+        s.add_all(map(lambda x: PracticeSessionResults(**x), results_arr))
         s.commit()
 
 
