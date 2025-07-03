@@ -4,7 +4,7 @@ from _services.drivers import (
     store_driver_numbers,
     store_team_changes,
 )
-from _services.event_formats import init_event_formats
+from _services.enums import init_event_formats, init_session_types
 from _services.events import store_event_session, store_events, store_weather_data
 from _services.laps import store_laps
 from _services.results import store_results
@@ -22,16 +22,17 @@ def store_session_data_to_db(season: str, round_number: int, session_type: int, 
 
 
 def init_year_data(season: str):
-    init_event_formats()
-    store_driver_data(int(season), 1)
-    store_driver_numbers(int(season), 24)
-    store_teams(int(season))
-    store_team_colors(int(season))
+    init_session_types()
+    # init_event_formats()
+    # store_driver_data(int(season), 1)
+    # store_driver_numbers(int(season), 24)
+    # store_teams(int(season))
+    # store_team_colors(int(season))
 
-    store_driver_data(int(season), 24)
-    store_driver_data(int(season), 1)
-    store_driver_numbers(int(season), 24)
+    # store_driver_data(int(season), 24)
+    # store_driver_data(int(season), 1)
+    # store_driver_numbers(int(season), 24)
 
-    store_team_changes(int(season))
-    store_circuit_data(season)
-    store_events(int(season))
+    # store_team_changes(int(season))
+    # store_circuit_data(season)
+    # store_events(int(season))
