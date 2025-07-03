@@ -105,5 +105,5 @@ def store_event_sessions(year: int):
 
     for i in range(len(schedule.index)):
         for identifier in range(1, 6):
-            store_weather_data(year, schedule["RoundNumber"].iloc[i], identifier)
             store_event_session(year, schedule["RoundNumber"].iloc[i], identifier)
+            store_weather_data(year, schedule["RoundNumber"].iloc[i], identifier)

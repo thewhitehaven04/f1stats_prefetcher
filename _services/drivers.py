@@ -12,8 +12,8 @@ from _repository.repository import DriverNumbers, Drivers
 
 def store_driver_data(season: int, event: int):
     year_data: list[pd.DataFrame] = []
-    for identifier in ["Practice 1", "Practice 2"]:
-        session = fastf1.get_session(year=season, gp=event, identifier=identifier)
+    for event in range(1, 25):
+        session = fastf1.get_session(year=season, gp=event, identifier="Practice 1")
         session.load(laps=False, telemetry=False, weather=False, messages=False)
         results = session.results
         year_data.append(
@@ -42,12 +42,12 @@ def store_driver_data(season: int, event: int):
         )
     )
     with Session(postgres) as s:
-        for driver in all_drivers.to_dict(orient="records"):
-            try:
-                s.add(Drivers(**driver))
-                s.commit()
-            except:
-                logger.error(f"Unable to insert {driver}")
+        s.execute(
+            statement=insert(Drivers)
+            .values(all_drivers.to_dict(orient="records"))
+            .on_conflict_do_nothing()
+        )
+        s.commit()
 
 
 def store_team_changes(season: int):

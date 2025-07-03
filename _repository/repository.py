@@ -107,7 +107,9 @@ class Drivers(Base):
     driver_team_changes: Mapped[List["DriverTeamChanges"]] = relationship(
         "DriverTeamChanges", back_populates="driver", init=False
     )
-    laps: Mapped[List["Laps"]] = relationship("Laps", back_populates="driver")
+    laps: Mapped[List["Laps"]] = relationship(
+        "Laps", back_populates="driver", init=False
+    )
     session_results: Mapped[List["SessionResults"]] = relationship(
         "SessionResults", back_populates="driver", init=False
     )
@@ -418,17 +420,15 @@ class Laps(Base):
     laptime: Mapped[Optional[float]] = mapped_column(
         REAL,
         Computed("((sector_1_time + sector_2_time) + sector_3_time)", persisted=True),
-        init=False
+        init=False,
     )
     pit_in_time: Mapped[Optional[float]] = mapped_column(REAL)
     pit_out_time: Mapped[Optional[float]] = mapped_column(REAL)
     is_inlap: Mapped[Optional[bool]] = mapped_column(
-        Boolean, Computed("(pit_in_time IS NOT NULL)", persisted=True),
-        init=False
+        Boolean, Computed("(pit_in_time IS NOT NULL)", persisted=True), init=False
     )
     is_outlap: Mapped[Optional[bool]] = mapped_column(
-        Boolean, Computed("(pit_out_time IS NOT NULL)", persisted=True),
-        init=False
+        Boolean, Computed("(pit_out_time IS NOT NULL)", persisted=True), init=False
     )
 
     compound: Mapped["Compounds"] = relationship(
