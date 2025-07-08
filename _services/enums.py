@@ -15,7 +15,7 @@ EVENT_FORMATS: Sequence[EventFormats] = [
 
 SESSION_TYPE_IDS: Sequence[SessionTypes] = [
     SessionTypes("Practice 1"),
-    SessionTypes("Practice 2 "),
+    SessionTypes("Practice 2"),
     SessionTypes("Practice 3"),
     SessionTypes("Qualifying"),
     SessionTypes("Race"),

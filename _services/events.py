@@ -2,6 +2,7 @@ import pandas as pd
 import fastf1
 from pycountry import countries
 from sqlalchemy.orm import Session
+from sqlalchemy.dialects.postgresql import insert
 
 from _repository.engine import postgres
 from _repository.repository import EventSessions, Events, SessionWeatherMeasurements
@@ -42,7 +43,11 @@ def store_events(year: int):
     ).drop(labels=["location"], axis=1)
 
     with Session(postgres) as s:
-        s.add_all(map(lambda x: Events(**x), schedule.to_dict(orient="records")))
+        s.execute(
+            statement=insert(Events)
+            .values(schedule.to_dict(orient="records"))
+            .on_conflict_do_nothing()
+        )
         s.commit()
 
 
@@ -69,8 +74,8 @@ def store_weather_data(year: int, event: int, identifier: int):
         weather_data[["season_year"]] = year
         weather_data[["session_type_id"]] = session.name
         weather_data = weather_data.to_dict(orient="records")
-        first_measurement = weather_data[0] 
-        last_measurement = weather_data[-1] 
+        first_measurement = weather_data[0]
+        last_measurement = weather_data[-1]
     else:
         raise ValueError(f"Weather data not loaded for {year}, {event}, {identifier}")
 

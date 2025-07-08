@@ -34,10 +34,6 @@ def init_year_data(season: str):
     store_teams(int(season))
     store_team_colors(int(season))
 
-    store_driver_data(int(season), 24)
-    store_driver_data(int(season), 1)
-    store_driver_numbers(int(season), 24)
-
     store_team_changes(int(season))
     store_circuit_data(season)
     store_events(int(season))
