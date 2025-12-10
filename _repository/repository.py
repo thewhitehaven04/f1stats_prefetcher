@@ -7,7 +7,6 @@ from sqlalchemy import (
     Column,
     Computed,
     Date,
-    DateTime,
     ForeignKeyConstraint,
     Index,
     Integer,
@@ -20,34 +19,12 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    mapped_column,
-    relationship,
-    MappedAsDataclass,
-)
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, MappedAsDataclass
 import datetime
 
 
 class Base(DeclarativeBase, MappedAsDataclass):
     pass
-
-
-class PrismaMigrations(Base):
-    __tablename__ = "_prisma_migrations"
-    __table_args__ = (PrimaryKeyConstraint("id", name="_prisma_migrations_pkey"),)
-
-    id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    checksum: Mapped[str] = mapped_column(String(64))
-    migration_name: Mapped[str] = mapped_column(String(255))
-    started_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(True), server_default=text("now()")
-    )
-    applied_steps_count: Mapped[int] = mapped_column(Integer, server_default=text("0"))
-    finished_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
-    logs: Mapped[Optional[str]] = mapped_column(Text)
-    rolled_back_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime(True))
 
 
 class Circuits(Base):
@@ -57,6 +34,7 @@ class Circuits(Base):
     id: Mapped[str] = mapped_column(String(8), primary_key=True)
     name: Mapped[str] = mapped_column(Text)
     geojson: Mapped[dict] = mapped_column(JSONB)
+    rotation: Mapped[int] = mapped_column(SmallInteger, server_default=text("0"))
 
     events: Mapped[List["Events"]] = relationship(
         "Events", back_populates="circuit", init=False
@@ -420,7 +398,6 @@ class Laps(Base):
     laptime: Mapped[Optional[float]] = mapped_column(
         REAL,
         Computed("((sector_1_time + sector_2_time) + sector_3_time)", persisted=True),
-        init=False,
     )
     pit_in_time: Mapped[Optional[float]] = mapped_column(REAL)
     pit_out_time: Mapped[Optional[float]] = mapped_column(REAL)
@@ -465,6 +442,14 @@ class SessionResults(Base):
             name="fk_event_sessions_event_name_season_year_session_type_id",
         ),
         PrimaryKeyConstraint("id", name="session_results_pkey"),
+        Index(
+            "session_results_driver_id_session_type_id_event_name_season_key",
+            "driver_id",
+            "session_type_id",
+            "event_name",
+            "season_year",
+            unique=True,
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
@@ -599,3 +584,12 @@ class RaceSessionResults(SessionResults):
     grid_position: Mapped[Optional[int]] = mapped_column(
         SmallInteger, server_default=text("0")
     )
+
+class Subscriptions(Base):
+    __tablename__ = 'subscriptions'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='subscriptions_pkey'),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    subscription: Mapped[dict] = mapped_column(JSONB)

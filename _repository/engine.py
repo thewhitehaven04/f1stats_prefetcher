@@ -12,6 +12,7 @@ logger.warning(f"--------\nDatabase connection string: {db_conn_string}\n-------
 
 postgres = create_engine(db_conn_string)
 
+
 @cache
 def get_connection() -> Connection:
     try:

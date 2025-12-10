@@ -20,7 +20,7 @@ def get_session_type(
         elif session_identifier == 4:
             return "Qualilike"
         return "Racelike"
-    elif format_ == "sprint":
+    elif format_ == "sprint_qualifying":
         if session_identifier in [2, 4]:
             return "Qualilike"
         return "Racelike"

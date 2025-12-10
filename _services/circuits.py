@@ -1,9 +1,11 @@
 import json
 from os import getcwd
 from typing import TypedDict
-from sqlalchemy import MetaData, Table
+from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import Session
 from _repository.engine import postgres
+from _repository.repository import Circuits
 
 
 CircuitData = TypedDict(
@@ -36,8 +38,24 @@ def store_circuit_data(season: str):
         entries.append({"name": name, "geojson": geojson, "id": circuit_id})
 
     with postgres.connect() as pg_con:
-        circuits_table = Table("circuits", MetaData(), autoload_with=postgres)
-        pg_con.execute(
-            insert(table=circuits_table).values(entries).on_conflict_do_nothing()
-        )
+        pg_con.execute(insert(Circuits).values(entries).on_conflict_do_nothing())
         pg_con.commit()
+
+
+def update_circuit_data(season: str):
+    try:
+        circuits = get_season_data(season)
+    except:
+        raise ValueError("Invalid season")
+
+    entries = [
+        {
+            "name": circuit["name"],
+            "id": circuit["id"],
+            "geojson": get_geojson_data(circuit["id"]),
+        }
+        for circuit in circuits
+    ]
+    with Session(postgres) as s:
+        s.execute(update(Circuits), entries)
+        s.commit()

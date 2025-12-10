@@ -1,7 +1,7 @@
 from typing import Sequence
 
 from _repository.engine import postgres
-from _repository.repository import Compounds, EventFormats, SessionTypes
+from _repository.repository import Compounds, EventFormats, Seasons, SessionTypes
 from sqlalchemy.orm import Session
 
 
@@ -25,14 +25,15 @@ SESSION_TYPE_IDS: Sequence[SessionTypes] = [
 ]
 
 COMPOUNDS: Sequence[Compounds] = [
-    Compounds('HARD'),
-    Compounds('MEDIUM'),
-    Compounds('SOFT'),
-    Compounds('WET'),
-    Compounds('INTERMEDIATE'),
-    Compounds('UNKNOWN'),
-    Compounds('TEST_UNKNOWN')
+    Compounds("HARD"),
+    Compounds("MEDIUM"),
+    Compounds("SOFT"),
+    Compounds("WET"),
+    Compounds("INTERMEDIATE"),
+    Compounds("UNKNOWN"),
+    Compounds("TEST_UNKNOWN"),
 ]
+
 
 def init_event_formats():
     with Session(postgres) as s:
@@ -41,17 +42,30 @@ def init_event_formats():
             s.add_all(EVENT_FORMATS)
             s.commit()
 
+
 def init_session_types():
     with Session(postgres) as s:
         s.query(SessionTypes)
         if s.query(SessionTypes).count() == 0:
             s.add_all(SESSION_TYPE_IDS)
             s.commit()
-        
+
 
 def init_compounds():
     with Session(postgres) as s:
         s.query(Compounds)
         if s.query(Compounds).count() == 0:
             s.add_all(COMPOUNDS)
+            s.commit()
+
+
+def init_season(season: int):
+    with Session(postgres) as s:
+        if s.query(Seasons).filter(Seasons.season_year == season).count() == 0:
+            s.add(
+                Seasons(
+                    season_year=season,
+                    description_text="2025 Season of F1 championship",
+                )
+            )
             s.commit()

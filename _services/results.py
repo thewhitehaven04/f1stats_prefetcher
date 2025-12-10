@@ -100,12 +100,14 @@ def store_race_results(season: int, round_number: int):
         s.commit()
 
 
-def store_sprint_quali_results(season: int, round_number: int):
-    results_arr = []
-    session = fastf1.get_session(year=season, gp=round_number, identifier=2)
+def _store_qualifying_results(
+    season: int, round_number: int, identifier: int, session_type_name: str
+):
+    session = fastf1.get_session(year=season, gp=round_number, identifier=identifier)
     session.load(laps=True, telemetry=False, weather=False, messages=True)
     results = session.results
 
+    results_arr = []
     for result in results.itertuples():
         q1 = result.Q1.total_seconds() 
         q2 = result.Q2.total_seconds()
@@ -114,7 +116,7 @@ def store_sprint_quali_results(season: int, round_number: int):
             {
                 "event_name": session.event.EventName,
                 "season_year": season,
-                "session_type_id": f"Sprint Qualifying",
+                "session_type_id": session_type_name,
                 "driver_id": result.BroadcastName,
                 "q1_laptime": q1 if pd.notna(q1) else None,
                 "q2_laptime": q2 if pd.notna(q2) else None,
@@ -126,35 +128,14 @@ def store_sprint_quali_results(season: int, round_number: int):
     with Session(postgres) as s:
         s.add_all(map(lambda x: QualifyingSessionResults(**x), results_arr))
         s.commit()
+
+
+def store_sprint_quali_results(season: int, round_number: int):
+    _store_qualifying_results(season, round_number, 2, "Sprint Qualifying")
 
 
 def store_quali_results(season: int, round_number: int):
-    results_arr = []
-
-    session = fastf1.get_session(year=season, gp=round_number, identifier=4)
-    # uncomment if previously loaded
-    session.load(laps=True, telemetry=False, weather=False, messages=False)
-    results = session.results
-    for result in results.itertuples():
-        q1 = result.Q1.total_seconds() 
-        q2 = result.Q2.total_seconds()
-        q3 = result.Q3.total_seconds()
-        results_arr.append(
-            {
-                "event_name": session.event.EventName,
-                "season_year": season,
-                "session_type_id": f"Qualifying",
-                "driver_id": result.BroadcastName,
-                "q1_laptime": q1 if pd.notna(q1) else None,
-                "q2_laptime": q2 if pd.notna(q2) else None,
-                "q3_laptime": q3 if pd.notna(q3) else None,
-                "position": result.Position,
-            }
-        )
-
-    with Session(postgres) as s:
-        s.add_all(map(lambda x: QualifyingSessionResults(**x), results_arr))
-        s.commit()
+    _store_qualifying_results(season, round_number, 4, "Qualifying")
 
 
 def store_practice_results(season: int, round_number: int, identifier: int):

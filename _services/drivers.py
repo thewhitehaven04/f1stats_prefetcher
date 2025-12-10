@@ -129,9 +129,6 @@ def store_team_changes(season: int):
 
                     previous_date = date
 
-                else: 
-                    raise ValueError(f"Team {team_name} not found in the database")
-
 
 def store_driver_numbers(season: int, event: int):
     session = fastf1.get_session(year=season, gp=event, identifier=1)

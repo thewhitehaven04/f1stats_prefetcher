@@ -1,5 +1,3 @@
-from sqlalchemy import MetaData, Table
-from sqlalchemy.dialects.postgresql import insert
 import fastf1
 import pandas as pd
 from _repository.engine import postgres

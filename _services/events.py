@@ -41,6 +41,7 @@ def store_events(year: int):
         how="right",
         validate="m:1",
     ).drop(labels=["location"], axis=1)
+    schedule = schedule.dropna()
 
     with Session(postgres) as s:
         s.execute(
